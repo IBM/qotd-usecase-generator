@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="icon" type="/image/png" href="/images/monkey.png">
+    <link rel="stylesheet" href="/css/home.css">
+    <link href="/css/bootstrap4-toggle.min.css" rel="stylesheet">
+
+
+    <script src="/js/jquery-3.3.1.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/bootstrap4-toggle.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+    <script>
+      function addDarkmodeWidget() {
+        new Darkmode().showWidget();
+      }
+      window.addEventListener('load', addDarkmodeWidget);
+    </script>
+
+    <title>Anomaly Generator - Service</title>
+</head>
+
+<body>
+
+    <main role="main">
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <a href="/">Home</a> | <a href="/anomalies">Active anomalies</a> | <a href="/services">Services</a> | <a href="/manager">Scenario Manager</a>
+                </div>
+                <div class="col-md-6  text-right">
+                    <button id="resetBtn" type="button" class="btn btn-outline-secondary" onclick="resetAll()">Reset to Factory Settings</button>
+                        <button id="saveBtn" type="button" class="btn btn-primary" onclick="save()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">Service: <%=serviceId%> (<%=instanceId%>)
+                </h1>
+            </div>
+        </section>
+
+        <div class="container" style="padding-top: 2em;">
+            <div class="row">
+                <div class="col-md-1"></div>
+                <div class="col-md-10">
+                    <div class="d-flex justify-content-center">
+                        <div>
+                            Memory (<span id="memValue" class="font-weight-bold text-primary ml-2"></span>) <br/>
+                            <input type="range" class="custom-range" id="memRange" min="0" max="10" onchange="update()">
+                        </div>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <div>
+                            CPU (<span id="cpuValue" class="font-weight-bold text-primary ml-2 valueSpan"></span>)<br/>
+                            <input type="range" class="custom-range" id="cpuRange" min="0" max="10" onchange="update()">
+                            
+                        </div>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <input id="healthySlider" type="checkbox" checked data-toggle="toggle" data-on="Healthy" data-off="Not Healthy" data-onstyle="success" data-offstyle="danger"  onchange="update()">
+                    </div>
+                </div>
+                <div class="col-md-1"></div>
+
+            </div>
+
+            <div class="justify-content-center">
+                <div class="container">
+                    <div class="row">
+                        <h4>End Points</h4>
+                    </div>
+                    <div class="row">
+                        <div class="container">
+                            <table class="table table-sm table-hover table-striped">
+                                <tbody id="endpointsTable">
+                                    <tr>
+                                        <th class="col-1">Method</th>
+                                        <th class="col-2">Endpoint</th>
+                                        <th class="col-2">Latency</th>
+                                        <th class="col-2">Status Override</th>
+                                        <th class="col-1">Dependent Loggers</th>
+                                        <th class="col-1"></th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <span class="text-left"><h4>Loggers</h4></span>
+                <span class="text-right" onClick="addLogger()"><img class="text-right" src="/images/add.png" width="20"></span>
+            </div>
+
+            <div id="loggers"></div>
+
+        </div>
+
+        <div id="endpointModal" class="modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Modal title</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <p>Modal body text goes here.</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary">Save changes</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        <% if( typeof branding != 'undefined'  && branding != null ) { %>
+            <div class="container">
+                <hr/>
+                <p><%-branding%></p>
+            </div>
+        <% } %>
+    
+    </main>
+
+
+
+    <script>
+
+        var _oldServiceDef = {};
+        var _newServiceDef = {};
+
+        window.onload = (event) => {
+            refresh();
+        };
+
+        function refresh() {
+            $.ajax({
+                type: 'GET',
+                url: '/services/<%=serviceId%>?instance=<%=instanceId%>',
+                success: setUI,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        };
+
+        var editingEndpoint = null;
+
+        function toggleEditEndpoint(e){
+            // get tr
+            var tr = e.closest('tr');
+            
+            if( editingEndpoint != null ) {
+                var method = $(editingEndpoint).find('td:eq(0)').text();
+                var path = $(editingEndpoint).find('td:eq(1)').text();
+                var id = method + ' ' + path;
+                var endpoint = _newServiceDef.endpoints[id];
+
+                // close it out
+                var mean = parseInt($('#meanEndpoint').val());
+                var stdev = parseInt($('#stdevEndpoint').val());
+                var min = parseInt($('#minEndpoint').val());
+                var max = parseInt($('#maxEndpoint').val());
+
+                endpoint.latency.mean = mean;
+                endpoint.latency.stdev = stdev;
+                endpoint.latency.min = min;
+                endpoint.latency.max = max;
+                update();
+
+                var rowHtml = buildEndpointCols(id,endpoint);
+                $(editingEndpoint).html( rowHtml );
+            }
+
+            var method = $(tr).find('td:eq(0)').text();
+            var path = $(tr).find('td:eq(1)').text();
+            var id = method + ' ' + path;
+            var endpoint = _newServiceDef.endpoints[id];
+
+            if( editingEndpoint == null) {
+                // latency
+                var html = "";
+                html += '<div class="row"><div class="col-2">Mean</div>&nbsp;<div class="col-3"><input id="meanEndpoint" size=4 value="'+ endpoint.latency.mean + '"></div></div>';
+                html += '<div class="row"><div class="col-2">Stdev</div>&nbsp;<div class="col-3"><input id="stdevEndpoint" size=4 value="'+ endpoint.latency.stdev + '"></div></div>';
+                html += '<div class="row"><div class="col-2">Min</div>&nbsp;<div class="col-3"><input id="minEndpoint" size=4 value="'+ endpoint.latency.min + '"></div></div>';
+                html += '<div class="row"><div class="col-2">Max</div>&nbsp;<div class="col-3"><input id="maxEndpoint" size=4 value="'+ endpoint.latency.max + '"></div></div>';
+                $(tr).find('td:eq(2)').html(html);
+
+                editingEndpoint = tr;
+            } else {
+                var rowHtml = buildEndpointCols(id,endpoint);
+                $(tr).html( rowHtml );
+                editingEndpoint = null;
+            }
+        }
+
+        function setUI(service) {
+
+            _oldServiceDef = service;
+            _newServiceDef = JSON.parse( JSON.stringify(service) );
+
+            $('#memValue').html(_newServiceDef.memHogs);
+            $('#memRange').val(_newServiceDef.memHogs);
+
+            $('#cpuValue').html(_newServiceDef.cpuHogs);
+            $('#cpuRange').val(_newServiceDef.cpuHogs);
+
+            if( _newServiceDef.healthy ) {
+                $('#healthySlider').bootstrapToggle('on');
+            } else {
+                $('#healthySlider').bootstrapToggle('off');
+            }
+
+            // endpoints
+            $('#endpointsTable').find("tr:gt(0)").remove();
+            if( typeof _newServiceDef.endpoints != 'undefined' ){
+                var paths = Object.keys(_newServiceDef.endpoints);
+                for(var i=0; i<paths.length; i++){
+                    var path = paths[i];
+                    var endpoint = _newServiceDef.endpoints[ path ];
+                    appendEndpoint(path, endpoint);
+                }
+            } 
+
+            // loggers
+            $('#loggerDiv').remove();
+            var loggerIds = Object.keys(_newServiceDef.loggers);
+            for(var i=0; i<loggerIds.length; i++){
+                var loggerId = loggerIds[i];
+                var logger = _newServiceDef.loggers[loggerId];
+                appendLogger(loggerId, logger);
+            }
+            $('#saveBtn').prop('disabled', true);
+        };
+
+        function update(){
+            // healthy
+
+            _newServiceDef.healthy = $('#healthySlider').prop('checked');
+
+            var v = $('#memValue').html();
+            _newServiceDef.memHogs = parseInt(v);
+            var v = $('#cpuValue').html();
+            _newServiceDef.cpuHogs = parseInt(v);
+                  
+            $('#saveBtn').prop('disabled', deepEqual( _newServiceDef, _oldServiceDef) );
+
+        }
+
+        function appendLogger(loggerId, logger){
+            var html = "";
+
+            var template = logger.template;
+            var frequency = logger.repeat;
+
+            var mean = "";
+            var stdev = "";
+            var min = "";
+            var max = "";
+
+            if( typeof frequency != 'undefined' ) {
+                if( Number.isInteger(frequency.mean) ) mean = frequency.mean;
+                if( Number.isInteger(frequency.stdev) ) stdev = frequency.stdev;
+                if( Number.isInteger(frequency.min) ) min = frequency.min;
+                if( Number.isInteger(frequency.max) ) max = frequency.max;
+            }
+
+            html += '<div id="loggerDiv" class="container"><div class="row">';
+            html += '  <div class="container" style="background-color:aliceblue; scroll-padding-bottom: 1em;">';
+            html += '    <div class="cart_row d-flex justify-content-between">';
+            html += '      <div><span><b>ID</b>:&nbsp;</span><span style="font-family: Courier;">' + loggerId + '</span></div>';
+            html += '      <span><img src="/images/edit.png" width=20>&nbsp;<img src="/images/delete.png" width=20></span>';
+            html += '    </div>';
+            html += '  <div class="container">Frequency (ms): '+ prettyRandom(frequency)+'</div>';
+            html += '  <div class="container">Template: <code>'+template+'</code></div>';
+            html += '</div>';
+
+
+            html += '  </div></div></div>';
+            html += '<div class="row" style="padding-top: 1em;"></div>';
+
+            $('#loggers').append(html);
+        }
+
+        function buildEndpointCols(id, endpoint){
+            var parts = id.split(" ");
+            var method = parts[0];
+            var path = parts[1];
+
+            var latency = prettyRandom(endpoint.latency);
+
+            var responseBarHtml = buildOverrideBar(endpoint.responseOverride);
+
+            var html = '<td>'+method+'</td><td>'+path+'</td><td>'+latency+'</td><td>'+responseBarHtml+'</td><td></td>';
+                html += '<td><span class="float-right"><img class="text-right" onclick="toggleEditEndpoint(this)" src="/images/edit.png" width="16"></span></td>';
+            
+            return html;
+        }
+
+        function appendEndpoint(id, endpoint){
+            var rowHtml = '<tr>';
+            rowHtml += buildEndpointCols(id, endpoint);
+            rowHtml += '</tr>';
+            $('#endpointsTable tr:last').after(rowHtml);
+        }
+
+        function buildOverrideBar(override){
+            var html = '<div class="container">';
+            html += '  <div class="progress">';
+
+            if( Array.isArray(override) ) {
+
+                var buckets = [ 0, 0, 0, 0 ]; // <=2xx, 3xx, 4xx, 5xx
+                var sum = 0;
+
+                for( var i=0; i<override.length; i++ ) {
+                    var val = override[i];
+                    if( val.code < 300 ) buckets[0] += val.weight;
+                    if( 300 <= val.code && val.code < 400 ) buckets[1] += val.weight;
+                    if( 400 <= val.code && val.code < 500 ) buckets[2] += val.weight;
+                    if( 500 <= val.code  ) buckets[3] += val.weight;
+                    sum += val.weight;
+                }
+
+                html += '    <div class="progress-bar" role="progressbar" style="width: '+ (buckets[0]*100/sum) + '%"></div>';
+                html += '    <div class="progress-bar bg-success" role="progressbar" style="width: '+ (buckets[1]*100/sum) + '%"></div>';
+                html += '    <div class="progress-bar bg-warning" role="progressbar" style="width: '+ (buckets[2]*100/sum) + '%"></div>';
+                html += '    <div class="progress-bar bg-danger" role="progressbar" style="width: '+ (buckets[3]*100/sum) + '%"></div>';
+            } else {
+                html += '    <div class="progress-bar" role="progressbar" style="width: 100%"></div>';
+            }
+            
+
+            html += '  </div>';
+            html += '</div>';
+            return html;
+        }
+
+        function prettyRandom( value ) {
+            var exp = value.mean;
+            if( Number.isInteger(value.stdev) ) exp += ", &#963; = " + value.stdev;
+            if( Number.isInteger(value.min) && Number.isInteger(value.max) ) {
+                exp += ", ["+value.min+","+value.max+"]";
+            } else if( Number.isInteger(value.min) ) {
+                exp += ", > "+value.min;
+            } else if( Number.isInteger(value.max) ) {
+                exp += ", < "+value.max;
+            }
+            return exp;
+            
+        }
+
+        function deepEqual(obj1, obj2) {
+            if(obj1 === obj2) // it's just the same object. No need to compare.
+                return true;
+            if(isPrimitive(obj1) && isPrimitive(obj2)) // compare primitives
+                return obj1 === obj2;
+            if(Object.keys(obj1).length !== Object.keys(obj2).length)
+                return false;
+            // compare objects with same number of keys
+            for(let key in obj1) {
+                if(!(key in obj2)) return false; //other object doesn't have this prop
+                if(!deepEqual(obj1[key], obj2[key])) return false;
+            }
+            return true;
+        }
+
+        function isPrimitive(obj) {
+            return (obj !== Object(obj));
+        }
+
+        function save(){
+            $.ajax({
+                type: 'PUT',
+                url: '/services/<%=serviceId%>?instance=<%=instanceId%>',
+                success: setUI,
+                headers: { "Accept": 'accept: application/json', "Content-Type": "application/json" },
+                data: JSON.stringify(_newServiceDef)
+            });
+        }
+
+        function resetAll(){
+            $.ajax({
+                type: 'DELETE',
+                url: '/services/<%=serviceId%>?instance=<%=instanceId%>',
+                success: setUI,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        }
+
+        $(document).ready(function () {
+            // const $valueSpan = $('#cpuValue');
+            // const $value = $('#cpuRange');
+            $('#cpuValue').html($('#cpuRange').val());
+            $('#cpuRange').on('input change', () => {
+                $('#cpuValue').html($('#cpuRange').val());
+            });
+
+            // const $valueSpan = $('#memValue');
+            // const $value = $('#memRange');
+            $('#memValue').html($('#memRange').val());
+            $('#memRange').on('input change', () => {
+                $('#memValue').html($('#memRange').val());
+            });
+        });
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qotd-usecase
+  namespace: qotd-load
+  labels:
+    app: qotd
+    tier: load
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qotd-usecase
+  template:
+    metadata:
+      labels:
+        app: qotd-usecase
+    spec:
+      volumes:
+        - name: qotd-service-defaults
+          configMap:
+            name: qotd-service-defaults
+            defaultMode: 420
+      containers:
+        - name: main
+          image: registry.gitlab.com/quote-of-the-day/qotd-usecase-generator/v4.1.0:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: qotd-service-defaults
+              readOnly: true
+              mountPath: /app/config
+          ports:
+            - name: http
+              containerPort: 3012
+              protocol: TCP
+
+

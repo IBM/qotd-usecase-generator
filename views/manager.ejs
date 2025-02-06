@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="icon" type="/image/png" href="/images/monkey.png">
+    <link rel="stylesheet" href="/css/home.css">
+
+    <script defer src="/js/jquery-3.3.1.min.js"></script>
+    <script defer src="/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+    <script>
+      function addDarkmodeWidget() {
+        new Darkmode().showWidget();
+      }
+      window.addEventListener('load', addDarkmodeWidget);
+    </script>
+    
+    <title>Anomaly Generator Scenario Manager</title>
+</head>
+
+<body>
+
+    <main role="main">
+        <div class="container text-left">
+            <a href="/">Home</a> | <a href="/anomalies">Active anomalies</a> | <a href="/services">Services</a> | Scenario Manager
+        </div>
+
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">Scenario Manager</h1>
+            </div>
+        </section>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-3"></div>
+                <div class="col-6">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text" id="inputGroupFileAddon01" onclick="upload()">Upload</span>
+                        </div>
+                        <div class="custom-file">
+                          <input id="useCaseJson" type="file" class="custom-file-input" id="inputGroupFile01" onchange="processFile()"
+                            aria-describedby="inputGroupFileAddon01">
+                          <label id="useCaseJsonLabel" class="custom-file-label" for="inputGroupFile01">Choose file</label>
+                        </div>
+                      </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container" style="padding-top: 2em;">
+            <table class="table table-hover">
+                <tbody id="usecases">
+
+                </tbody>
+            </table>
+        </div>
+
+        <% if( typeof branding != 'undefined'  && branding != null ) { %>
+            <div class="container">
+                <hr/>
+                <p><%-branding%></p>
+            </div>
+        <% } %>
+    
+    </main>
+
+
+    <script>
+
+        window.onload = (event) => {
+            refresh();
+        };
+
+        var newUseCase = null;
+        var useCaseIds = [];
+
+        async function processFile() {
+            var entry = document.getElementById("useCaseJson").files[0];
+            var data = await entry.text();
+
+            try{
+                var usecase = JSON.parse(data);
+                var errors = validate(usecase);
+                if( errors.length>0 ) {
+                    var message = "Use Case errors:\n";
+                    for( var e=0; e<errors.length; e++ ){
+                        var err = errors[e];
+                        message += "\t- "+err+'\n';
+                    }
+                    alert( message.trim());
+                } else {
+                    newUseCase = usecase;
+                    $('#useCaseJsonLabel').html("id: <code>" + usecase.id+ "</code> (Ready to upload)");
+                }
+
+            } catch ( error ) {
+                alert( 'JSON File Error: ' + error );
+            }
+
+        }
+
+        function validate(usecase){
+            var errors = [];
+            if( typeof usecase.id == 'undefined' || usecase.id == '' ) errors.push("id property required.");
+            if( typeof usecase.id != 'undefined' && usecase.id.length>0 && useCaseIds.indexOf( usecase.id )>=0 ) errors.push(`Use case id ${usecase.id} already exists.`);
+            if( typeof usecase.name == 'undefined' || usecase.name == '' ) errors.push("name property required.");
+            if( typeof usecase.steps == 'undefined' || ! Array.isArray(usecase.steps) ) errors.push("steps array property required.");
+            if( typeof usecase.steps != 'undefined' && Array.isArray(usecase.steps) && usecase.steps.length == 0 ) errors.push("at least one step required.");
+
+            return errors;
+        }
+
+        function upload(){
+            if( newUseCase != null ) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/usecase',
+                    contentType: 'application/json',
+                    data: JSON.stringify(newUseCase), 
+                    success: completedUpload,
+                    headers: { "Accept": 'accept: application/json' }
+                });
+            }
+        }
+
+        function completedUpload(){
+            $('#useCaseJsonLabel').html("");
+            newUseCase = null;
+            refresh();
+        }
+
+        function refresh() {
+            $.ajax({
+                type: 'GET',
+                url: '/usecase',
+                success: updateUI,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        }
+
+        function updateUI(data) {
+            var usecases = data;
+            $('#usecases').empty();
+            useCaseIds = [];
+            for (var i = 0; i < usecases.length; i++) {
+                var usecase = usecases[i];
+                useCaseIds.push(usecase.id);
+                var statusicon = "";
+                if (usecase.status == 'active') {
+                    statusicon = '<img src="/images/green-circle.png" width="24">';
+                }
+                var row = '<tr><td>' + statusicon + '</td>' +
+                    '<td><b>' + usecase.name + '</b><br/>ID: <code>' + usecase.id + '</code>&nbsp;<a href="/source/'+usecase.id+'" target="_about"><img src="/images/json.png" width="16"></a><br/>' +
+                    usecase.description + '</td><td><button class="btn btn-outline-dark" onclick="deleteUseCase(\'' + usecase.id + '\')"><img src="/images/delete.png" width="24"></button></td></tr>'
+                $('#usecases').append(row);
+            }
+        }
+
+        function gotoUseCase(id) {
+            window.location.href = '/source/' + id;
+        }
+
+        function deleteUseCase(id) {
+            $.ajax({
+                type: 'DELETE',
+                url: '/usecase/' + id,
+                success: updateUI,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        }
+
+
+
+    </script>
+
+</body>
+
+</html>

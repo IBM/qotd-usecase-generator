@@ -1,0 +1,88 @@
+{
+    "id": "c_quote_pdf_issues",
+    "name": "Quote and PDF Service Issues",
+    "description": "New log entries are added to quote and pdf services. Both also experience sharp increase in CPU and memory.",
+    "steps": [
+        {
+            "service": "quote",
+            "name": "Start log warning about requests for resource from IP address (author service). Repeats every 3 seconds.",
+            "type": "setLogger",
+            "id": "log1",
+            "options": {
+                "name": "dangerwill",
+                "template": "DANGER Will Robinson. Unexpected request for {{URL}} from source: {{IP}} ",
+                "fields": {
+                    "URL": {
+                        "type": "url"
+                    },
+                    "IP": {
+                        "type": "ip"
+                    }
+                },
+                "repeat": {
+                    "mean": 3000,
+                    "stdev": 100,
+                    "min": 2000,
+                    "max": 4000
+                }
+            }
+        },
+        {
+            "service": "quote",
+            "name": "Increase memory usage",
+            "type": "memory",
+            "value": 8
+        },
+        {
+            "service": "quote",
+            "name": "Increase service delay (1s)",
+            "type": "latency",
+            "endpoint": "GET /quotes/:id",
+            "value": {
+                "mean": 1000
+            }
+        },
+        {
+            "service": "pdf",
+            "name": "Start log warning about requests for resource from IP address (image service). Repeats every 3 seconds.",
+            "type": "setLogger",
+            "id": "log1",
+            "options": {
+                "name": "possible hack",
+                "template": "Unknown client access resource {{URL}} from source: {{IP}} ",
+                "fields": {
+                    "URL": {
+                        "type": "url"
+                    },
+                    "IP": {
+                        "type": "ip"
+                    }
+                },
+                "repeat": {
+                    "mean": 3000,
+                    "stdev": 100,
+                    "min": 2000,
+                    "max": 4000
+                }
+            }
+        },
+        {
+            "service": "quote",
+            "name": "Increase cpu usage",
+            "type": "cpu",
+            "value": 10
+        },
+        {
+            "service": "pdf",
+            "name": "Increase memory usage",
+            "type": "memory",
+            "value": 8
+        },
+        {
+            "service": "pdf",
+            "name": "Increase cpu usage",
+            "type": "cpu",
+            "value": 10
+        }
+    ]
+}

@@ -1,0 +1,100 @@
+{
+    "id": "b_ratings",
+    "name": "Ratings service failures",
+    "description": "The rating service experiences major problems across the board (log anomalies, latency, cpu, memory and increase of error status codes).",
+    "steps": [
+        {
+            "service": "ratings",
+            "name": "Increase memory usage",
+            "type": "memory",
+            "value": 7
+        },
+        {
+            "name": "Pause 60 seconds",
+            "type": "delay",
+            "duration": "60000"
+        },
+        {
+            "service": "ratings",
+            "name": "Rating service failing with 500/404 errors half of the time.",
+            "type": "setCallDistributionOverride",
+            "endpoint": "GET /ratings/:id",
+            "options": [
+                {
+                    "code": 0,
+                    "weight": 2
+                },
+                {
+                    "code": 500,
+                    "weight": 1,
+                    "payload": "Uh oh",
+                    "template": "Unexpected internal error: Bobo is having a moment."
+                },
+                {
+                    "code": 404,
+                    "weight": 1,
+                    "payload": "huh?",
+                    "template": "Unexpected internal error: Bobo has no idea what you are talking about."
+                }
+            ]
+        },
+        {
+            "service": "ratings",
+            "name": "Increase cpu usage",
+            "type": "cpu",
+            "value": 10
+        },
+        {
+            "service": "ratings",
+            "type": "latency",
+            "name": "Increase latency in primary GET /ratings/:id to 0.9 seconds",
+            "endpoint": "GET /ratings/:id",
+            "value": {
+                "mean": 900,
+                "stdev": 200,
+                "min": 200,
+                "max": 11000
+            }
+        },
+        {
+            "service": "ratings",
+            "name": "Start new independent log - unknown code every 4 seconds in quote service",
+            "type": "setLogger",
+            "id": "log1",
+            "options": {
+                "name": "ERROR - unknown code",
+                "template": "ERROR - unknown code {{WORD}} found in bucket.",
+                "fields": {
+                    "WORD": {
+                        "type": "word"
+                    }
+                },
+                "repeat": {
+                    "mean": 4000,
+                    "stdev": 1000,
+                    "min": 2000,
+                    "max": 8000
+                }
+            }
+        },
+        {
+            "service": "ratings",
+            "name": "Start new dependent logger on /ratings/:id endpoint.",
+            "type": "setDependentLogger",
+            "endpoint": "GET /ratings/:id",
+            "id": "deplog1",
+            "options": {
+                "name": "DEPENDENT LOGGER - unknown ip",
+                "template": "ERROR - unknown ip {{IP}} request.",
+                "fields": {
+                    "IP": {
+                        "type": "ip"
+                    }
+                },
+                "delay": {
+                    "mean": 100
+                }
+            }
+        }
+    ]
+}

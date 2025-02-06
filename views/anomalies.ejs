@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="icon" type="/image/png" href="/images/monkey.png">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+
+    <script defer src="/js/jquery-3.3.1.min.js"></script>
+    <script defer src="/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+    <script>
+      function addDarkmodeWidget() {
+        new Darkmode().showWidget();
+      }
+      window.addEventListener('load', addDarkmodeWidget);
+    </script>
+    
+
+    <title>Active anomalies</title>
+</head>
+
+<body>
+
+    <main role="main">
+        <div class="container text-left">
+            <a href="/">Home</a> | Active anomalies | <a href="/services">Services</a> | <a href="/manager">Scenario Manager</a>
+        </div>
+
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">Active Anomalies</h1>
+            </div>
+        </section>
+
+        <div class="container text-center" style="padding-top: 30px;">
+            <button id="resetBtn" type="button" class="btn  btn-danger" onclick="resetAll()">Reset All
+                Services to Factory Settings</button>
+        </div>
+
+        <div class="container" style="padding-top: 2em; width: 33%">
+            <table class="table table-hover">
+                <thead>
+                    <th class="col-sm-1"></th><th class="col-sm-3">Service</th><th class="col-sm-3">Instance ID</th><th  class="col-sm-2">Active anomalies</th>
+                </thead>
+                <tbody id="serviceInstances" >
+
+                </tbody>
+            </table>
+        </div>
+
+        <% if( typeof branding != 'undefined'  && branding != null ) { %>
+            <div class="container">
+                <hr/>
+                <p><%-branding%></p>
+            </div>
+        <% } %>
+
+    </main>
+
+
+    <script>
+
+        window.onload = (event) => {
+            refresh();
+        };
+
+        function refresh() {
+            $.ajax({
+                type: 'GET',
+                url: '/anomalies',
+                success: updateUI,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        }
+
+        function updateUI(data) {
+            $('#serviceInstances').empty();
+            for (var status of data ) {
+                var statusicon = '';
+                if( status.active ) statusicon = '<img src="/images/monkey.png" width="24">';
+                var row = '<tr><td>' + statusicon + '</td>' +
+                    '<td>' + status.serviceId + '</td>' +
+                    '<td>' + status.instanceId + '</td>' +
+                    '<td>' + status.active + '</td></tr>'
+                $('#serviceInstances').append(row);
+            }
+        }
+
+        function resetAll() {
+            $.ajax({
+                type: 'POST',
+                url: '/reset'
+            });
+            $('#resetBtn').addClass('disabled');
+            setTimeout(() => { $('#resetBtn').removeClass('disabled'); }, 1000);
+        }
+
+    </script>
+
+</body>
+
+</html>

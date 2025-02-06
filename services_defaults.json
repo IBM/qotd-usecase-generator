@@ -1,0 +1,360 @@
+{
+    "web": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "GET /": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /random": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /author/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /images/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /pdf/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /order/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "POST /order/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "image": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "GET /images/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "ratings": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "GET /ratings/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": { }
+    },
+    "pdf": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "GET /pdf/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": { }
+    },
+    "author": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "GET /authors/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /images/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "quote": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "GET /quotes/:id": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "engraving": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "POST /order": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "qrcode": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {},
+        "loggers": {}
+    },
+    "db": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {},
+        "loggers": {}
+    },
+    "rational": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "POST /generate": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "irrational": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "POST /generate": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "perfect": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "POST /generate": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "complex": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "POST /generate": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "whole": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "POST /generate": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "prime": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "POST /generate": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "real": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "POST /generate": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    },
+    "factory-interface": {
+        "memHogs": 0,
+        "cpuHogs": 0,
+        "healthy": true,
+        "endpoints": {
+            "GET /whole": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /real": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /complex": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /prime": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /rational": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "GET /irrational": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            },
+            "POST /perfect": {
+                "latency": {
+                    "mean": 100,
+                    "stdev": 100,
+                    "min": 20,
+                    "max": 200
+                }
+            }
+        },
+        "loggers": {}
+    }
+}

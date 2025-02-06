@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="icon" type="/image/png" href="/images/monkey.png">
+    <link rel="stylesheet" href="/css/home.css">
+
+    <script defer src="/js/jquery-3.3.1.min.js"></script>
+    <script defer src="/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+    <script>
+      function addDarkmodeWidget() {
+        new Darkmode().showWidget();
+      }
+      window.addEventListener('load', addDarkmodeWidget);
+    </script>
+
+    <title>Anomaly Generator</title>
+</head>
+
+<body>
+
+    <main role="main">
+        <div class="container text-left">
+            <a href="/">Home</a> | <a href="/anomalies">Active anomalies</a> | <a href="/services">Services</a> | <a href="/manager">Scenario Manager</a>
+        </div>
+
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">Anomaly Generator</h1>
+                <h2>
+                    <%=name%>
+                </h2>
+            </div>
+        </section>
+
+        <div class="container text-center" style="padding-top: 30px;">
+            <button id="resetBtn" type="button" class="btn btn-danger" onclick="resetAll()">Reset All
+                Services to Factory Settings (i.e. Stop anomalous behavior)</button>
+        </div>
+
+        <div class="container text-center" style="padding-top: 15px;">
+            <p id="description"></p>
+        </div>
+
+        <div class="container text-center" style="padding-top: 30px;">
+            <button id="startBtn" type="button" class="btn btn-primary d-none"
+                onclick="start()">Start</button>
+            <!-- <button id="stopBtn" type="button" class="btn btn-danger d-none"
+                onclick="stop()">Stop</button>
+                <button id="resumeBtn" type="button" class="btn btn-success d-none"
+                onclick="resume()">Resume</button>
+            -->
+        </div>
+
+        <div class="container" style="padding-top: 2em;">
+            <table id="steps" class="table"></table>
+        </div>
+
+        <% if( typeof branding != 'undefined'  && branding != null ) { %>
+            <div class="container">
+                <hr/>
+                <p><%-branding%></p>
+            </div>
+        <% } %>
+    
+    </main>
+
+
+    <script>
+
+        var usecaseId = '<%=id%>';
+
+        window.onload = (event) => {
+            refresh();
+        };
+
+        function refresh() {
+            $.ajax({
+                type: 'GET',
+                url: '/usecase/' + usecaseId,
+                success: updateUI,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        }
+
+        setInterval( refresh, 2000 );
+
+        function updateUI(usecase) {
+            $('#description').html(usecase.description);
+
+            if( typeof usecase.status != 'undefined' && usecase.status == 'completed' ) {
+                $('#startBtn').addClass('d-none');
+                //$('#stopBtn').addClass('d-none');
+                //$('#resumeBtn').addClass('d-none');
+            } else if( typeof usecase.status != 'undefined' && usecase.status == 'stopped' ) {
+                $('#startBtn').addClass('d-none');
+                //$('#stopBtn').addClass('d-none');
+                //$('#resumeBtn').removeClass('d-none');
+            } else if( typeof usecase.status != 'undefined' && usecase.status == 'running' ) {
+                $('#startBtn').addClass('d-none');
+                //$('#stopBtn').removeClass('d-none');
+                //$('#resumeBtn').removeClass('d-none');
+            } else {
+                // assume running
+                //$('#stopBtn').addClass('d-none');
+                $('#startBtn').removeClass('d-none');
+                //$('#resumeBtn').addClass('d-none');
+            }
+            
+            $('#steps').empty();
+            for (var i = 0; i < usecase.steps.length; i++) {
+                var step = usecase.steps[i];
+                var statusicon = "";
+                if( step.status == 'completed' ) {
+                    statusicon = '<img src="/images/completed.png" width="24">';
+                } else if( step.status == 'active' ) {
+                    statusicon = '<img src="/images/green-circle.png" width="24">';
+                } else if( step.status == 'failed' ) {
+                    statusicon = '<img src="/images/notok.png" width="24">';
+                } else if( step.status == 'skipped' ) {
+                    statusicon = '<img src="/images/yellow-circle.png" width="24">';
+                }
+                var svc = "";
+                if( typeof step.service != 'undefined' ) svc = step.service;
+                var row = '<tr><td style="width: 1em;">'+statusicon+'</td>' +
+                            '<td style="width: 8em;">'+svc+'</td>' +
+                            '<td>'+step.name+'</td></tr>';
+                $('#steps').append(row );
+
+            }
+
+        }
+
+        function start(){
+            var payload = { "action": 'start' };
+            $.ajax({
+                type: 'PUT',
+                url: '/usecase/' + usecaseId,
+                success: updateUI,
+                contentType: "application/json",
+                data: JSON.stringify(payload)
+            });
+        }
+
+        function stop(){
+            var payload = { "action": 'stop' };
+            $.ajax({
+                type: 'PUT',
+                url: '/usecase/' + usecaseId,
+                success: updateUI,
+                contentType: "application/json",
+                data: JSON.stringify(payload)
+            });
+        }
+
+        function resume(){
+            var payload = { "action": 'resume' };
+            $.ajax({
+                type: 'PUT',
+                url: '/usecase/' + usecaseId,
+                success: updateUI,
+                contentType: "application/json",
+                data: JSON.stringify(payload)
+            });
+        }
+
+        function formatTime(timeInMs) {
+            if (1000 <= timeInMs && timeInMs < 60000) {
+                var val = timeInMs / 1000;
+                return val.toFixed(2) + ' sec';
+            } else if (60000 <= timeInMs && timeInMs < 60 * 60 * 1000) {
+                var val = timeInMs / 60000;
+                return val.toFixed(2) + ' min';
+            } else if (60 * 60 * 1000 <= timeInMs) {
+                var val = timeInMs / (60 * 60 * 1000);
+                return val.toFixed(2) + ' hr';
+            }
+
+            return timeInMs + 'ms';
+        }
+
+        function resetAll() {
+            $.ajax({
+                type: 'POST',
+                url: '/reset'
+            });
+            $('#resetBtn').addClass('disabled');
+            setTimeout(() => { $('#resetBtn').removeClass('disabled'); }, 1000);
+        }
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,256 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qotd-service-defaults
+  namespace: {{ .Values.appNamespace }}
+data:
+  services_defaults.json: |
+    {
+        "web": {
+            "memHogs": 0,
+            "cpuHogs": 0,
+            "healthy": true,
+            "endpoints": {
+                "GET /": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                },
+                "GET /random": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                },
+                "GET /author/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                },
+                "GET /images/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                },
+                "GET /pdf/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                },
+                "GET /order/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                },
+                "POST /order/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                }
+            },
+            "loggers": {}
+        },
+        "image": {
+            "memHogs": 0,
+            "cpuHogs": 0,
+            "healthy": true,
+            "endpoints": {
+                "GET /images/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                }
+            },
+            "loggers": {}
+        },
+        "ratings": {
+            "memHogs": 0,
+            "cpuHogs": 0,
+            "healthy": true,
+            "endpoints": {
+                "GET /ratings/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                }
+            },
+            "loggers": {
+                "heartbeat": {
+                    "name": "A regular log message indicating the health with a simple status.",
+                    "template": "Heartbeat status: {{STATUS}}",
+                    "fields": {
+                        "STATUS": {
+                            "type": "pickWeighted",
+                            "options": [
+                                {
+                                    "value": "OK",
+                                    "weight": 8
+                                },
+                                {
+                                    "value": "SLOW",
+                                    "weight": 2
+                                }
+                            ]
+                        }
+                    },
+                    "repeat": {
+                        "mean": 30000,
+                        "stdev": 1000,
+                        "min": 3000,
+                        "max": 5000
+                    }
+                }
+            }
+        },
+        "pdf": {
+            "memHogs": 0,
+            "cpuHogs": 0,
+            "healthy": true,
+            "endpoints": {
+                "GET /pdf/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                }
+            },
+            "loggers": {
+                "incident": {
+                    "name": "Simulated incident record",
+                    "template": "incident error code: E{{v1}} epid={{v2}} dsteuid={{v3}} dstepid={{v4}} vd={{user}} type={{type}} subtype={{subtype}}",
+                    "fields": {
+                        "v1": {
+                            "type": "randomInt",
+                            "min": 1000,
+                            "max": 9999
+                        },
+                        "v2": {
+                            "type": "randomInt",
+                            "min": 1000,
+                            "max": 9999
+                        },
+                        "v3": {
+                            "type": "randomInt",
+                            "min": 1000,
+                            "max": 9999
+                        },
+                        "v4": {
+                            "type": "randomInt",
+                            "min": 1000,
+                            "max": 9999
+                        },
+                        "user": {
+                            "type": "userName"
+                        },
+                        "type": {
+                            "type": "pick",
+                            "options": [
+                                "access",
+                                "update",
+                                "weight"
+                            ]
+                        },
+                        "subtype": {
+                            "type": "pick",
+                            "options": [
+                                "read",
+                                "write",
+                                "delete"
+                            ]
+                        }
+                    },
+                    "repeat": {
+                        "mean": 120000,
+                        "stdev": 5000,
+                        "min": 5000,
+                        "max": 20000
+                    }
+                }
+            }
+        },
+        "author": {
+            "memHogs": 0,
+            "cpuHogs": 0,
+            "healthy": true,
+            "endpoints": {
+                "GET /authors/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                },
+                "GET /images/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                }
+            },
+            "loggers": {}
+        },
+        "quote": {
+            "memHogs": 0,
+            "cpuHogs": 0,
+            "healthy": true,
+            "endpoints": {
+                "GET /quotes/:id": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                }
+            },
+            "loggers": {}
+        },
+        "engraving": {
+            "memHogs": 0,
+            "cpuHogs": 0,
+            "healthy": true,
+            "endpoints": {
+                "POST /order": {
+                    "latency": {
+                        "mean": 100,
+                        "stdev": 100,
+                        "min": 20,
+                        "max": 200
+                    }
+                }
+            },
+            "loggers": {}
+        }
+    }
+

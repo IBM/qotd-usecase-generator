@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="icon" type="/image/png" href="/images/monkey.png">
+    <link rel="stylesheet" href="/css/home.css">
+
+    <script defer src="/js/jquery-3.3.1.min.js"></script>
+    <script defer src="/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+    <script>
+      function addDarkmodeWidget() {
+        new Darkmode().showWidget();
+      }
+      window.addEventListener('load', addDarkmodeWidget);
+    </script>
+    
+
+    <title>Anomaly Generator - Services</title>
+</head>
+
+<body>
+
+    <main role="main">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <a class="text-left" href="/">Home</a> | <a href="/anomalies">Active anomalies</a> | Services | <a href="/manager">Scenario Manager</a>
+                </div>
+                <div class="col-md-6  text-right">
+                    <button id="resetBtn" type="button" class="btn btn-outline-secondary" onclick="resetAll()">Reset All
+                        Services to Factory Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">Managed Service Instances</h1>
+            </div>
+        </section>
+
+
+        <div class="container" style="padding-top: 2em;">
+            <div class="row">
+                <div class="col-md-12">
+                    <table class="table table-hover">
+                        <tbody id="services">
+                            <tr>
+                                <th class="col-1">Service</th>
+                                <th class="col-1">Instance</th>
+                                <th class="col-1">Healthy</th>
+                                <th class="col-1">Memory CPU</th>
+                                <th class="col-1">Independent Loggers</th>
+                                <th class="col-6">Endpoints (path | overrides | loggers)</th>
+                                <th class="col-1">Last Checkin</th>
+                            </tr>
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <% if( typeof branding != 'undefined'  && branding != null ) { %>
+            <div class="container">
+                <hr/>
+                <p><%-branding%></p>
+            </div>
+        <% } %>
+        
+    </main>
+
+
+    <script>
+
+        window.onload = (event) => {
+            refresh();
+        };
+
+        function refresh() {
+            $("#services").find("tr:gt(0)").remove();
+            $.ajax({
+                type: 'GET',
+                url: '/services',
+                success: updateUI,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        }
+
+        function updateUI(data) {
+            var keys = Object.keys(data);
+
+            for( var i=0; i<keys.length; i++ ){
+                var serviceId = keys[i];
+                var instances = data[serviceId];
+
+                for( var instance of instances ) {
+
+                    var row = '<tr onclick="gotoServiceInstance(\''+serviceId+'\', \''+instance.instance+'\')">';
+
+                    row += '<td><b>'+serviceId+'</b></td>';
+                    row += '<td><b>'+instance.instance+'</b></td>';
+                    if( instance.healthy ) {
+                        row += '<td><img src="/images/healthy.png" height="24"></td>';
+                    } else {
+                        row += '<td><img src="/images/unhealthy.png" height="24"></td>';
+                    }
+                    row += "<td>"+instance.memHogs+" / "+instance.cpuHogs+"</td>";
+
+                    // loggers
+                    row += "<td>";
+                    var loggers = instance.loggers;
+                    if( typeof loggers != 'undefined' ){
+                        var count = Object.keys(loggers).length;
+                        row += "(" + count + ")";
+                    }
+                    row += "</td>";
+
+
+                    // endpoints
+                    row += "<td>";
+                    var endpoints = instance.endpoints;
+                    if( typeof endpoints != 'undefined' ){
+                        var pathIds = Object.keys(endpoints);
+                        for(var j=0; j<pathIds.length; j++){
+                            var id = pathIds[j];
+                            var latency = endpoints[id].latency.mean;
+                            if( typeof endpoints[id].latency.stdev != 'undefined' ) {
+                                latency = "~"+endpoints[id].latency.mean;
+                            }
+                            
+                            var override = false;
+
+                            row += '<div class="row">';
+                            // row += "<code>"+path+"</code> ("+latency+"ms)";
+                            row += "<div class=\"col-6\"><code>"+id+"</code></div>";
+                            var bar = buildOverrideBar(endpoints[id].responseOverride);
+                            row += '<div class="col-3">' + bar + "</div>";
+
+                            if( typeof endpoints[id].loggers != 'undefined' ) {
+                                var depLoggerCount = Object.keys(endpoints[id].loggers).length;
+                                row += '<div class="col-1">('+depLoggerCount+')</div>';
+                            } else {
+                                row += '<div class="col-1">(0)</div>';
+                            }
+
+                            row += '</div>';
+
+                        }
+                    }
+                    row += "</td>";
+
+                    // checkin
+                    row += "<td>"+instance.lastCheckIn+"</td>";
+
+                    row += "</tr>";
+
+                    $('#services tr:last').after(row);
+
+                }
+
+            }
+        }
+
+        function gotoServiceInstance(service,instance){
+            window.location.href = '/services/' + service + '?instance=' + instance;
+        }
+
+        function buildOverrideBar(override){
+            var html = '<div class="progress" style="width:60px;">';
+
+            if( Array.isArray(override) ) {
+
+                var buckets = [ 0, 0, 0, 0 ]; // <=2xx, 3xx, 4xx, 5xx
+                var sum = 0;
+
+                for( var i=0; i<override.length; i++ ) {
+                    var val = override[i];
+                    if( val.code < 300 ) buckets[0] += val.weight;
+                    if( 300 <= val.code && val.code < 400 ) buckets[1] += val.weight;
+                    if( 400 <= val.code && val.code < 500 ) buckets[2] += val.weight;
+                    if( 500 <= val.code  ) buckets[3] += val.weight;
+                    sum += val.weight;
+                }
+
+                html += '    <div class="progress-bar" role="progressbar" style="width: '+ (buckets[0]*100/sum) + '%"></div>';
+                html += '    <div class="progress-bar bg-success" role="progressbar" style="width: '+ (buckets[1]*100/sum) + '%"></div>';
+                html += '    <div class="progress-bar bg-warning" role="progressbar" style="width: '+ (buckets[2]*100/sum) + '%"></div>';
+                html += '    <div class="progress-bar bg-danger" role="progressbar" style="width: '+ (buckets[3]*100/sum) + '%"></div>';
+            } else {
+                html += '    <div class="progress-bar" role="progressbar" style="width: 100%"></div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function resetAll(){
+            $.ajax({
+                type: 'DELETE',
+                url: '/services',
+                success: refresh,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>

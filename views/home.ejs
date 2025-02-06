@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="icon" type="/image/png" href="/images/monkey.png">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+
+    <script defer src="/js/jquery-3.3.1.min.js"></script>
+    <script defer src="/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+    <script>
+      function addDarkmodeWidget() {
+        new Darkmode().showWidget();
+      }
+      window.addEventListener('load', addDarkmodeWidget);
+    </script>
+    
+
+    <title>Anomaly Generator</title>
+</head>
+
+<body>
+
+    <main role="main">
+        <div class="container text-left">
+            Home | <a href="/anomalies">Active anomalies</a> | <a href="/services">Services</a> | <a href="/manager">Scenario Manager</a>
+        </div>
+
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">Anomaly Generator</h1>
+            </div>
+        </section>
+
+        <div class="container text-center" style="padding-top: 30px;">
+            <button id="resetBtn" type="button" class="btn  btn-danger" onclick="resetAll()">Reset All
+                Services to Factory Settings</button>
+        </div>
+
+        <div class="container" style="padding-top: 2em;">
+            <table class="table table-hover">
+                <tbody id="usecases" >
+
+                </tbody>
+            </table>
+        </div>
+
+        <% if( typeof branding != 'undefined'  && branding != null ) { %>
+            <div class="container">
+                <hr/>
+                <p><%-branding%></p>
+            </div>
+        <% } %>
+
+    </main>
+
+
+    <script>
+
+        window.onload = (event) => {
+            refresh();
+        };
+
+        function refresh() {
+            $.ajax({
+                type: 'GET',
+                url: '/',
+                success: updateUI,
+                headers: { "Accept": 'accept: application/json' }
+            });
+        }
+
+        setInterval( refresh, 2000 );
+
+        function updateUI(data) {
+            var usecases = data;
+            $('#usecases').empty();
+            for (var i = 0; i < usecases.length; i++) {
+                var usecase = usecases[i];
+                var statusicon = "";
+                if (usecase.status == 'running') {
+                    statusicon = '<img src="/images/green-circle.png" width="24">';
+                } else if( usecase.status == 'completed') {
+                    statusicon = '<img src="/images/completed.png" width="24">';
+                }
+                var row = '<tr onclick="gotoUsecase(\'' + usecase.id + '\')"><td>' + statusicon + '</td>' +
+                    '<td><b>' + usecase.name + '</b><br/>' +
+                    usecase.description + '</td></tr>'
+                $('#usecases').append(row);
+            }
+        }
+
+        function gotoUsecase(id){
+            window.location.href = '/usecase/' + id;
+        }
+
+        function resetAll() {
+            $.ajax({
+                type: 'POST',
+                url: '/reset'
+            });
+            $('#resetBtn').addClass('disabled');
+            setTimeout(() => { $('#resetBtn').removeClass('disabled'); }, 1000);
+        }
+
+    </script>
+
+</body>
+
+</html>

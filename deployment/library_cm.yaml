@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qotd-usecase-library
+  namespace: qotd-load
+data:
+  liberty_coded_log.json: >
+    {
+        "id": "liberty_coded_log",
+        "name": "Throw well known WAS/Liberty error",
+        "description": "Throws a WAS/Liberty error with a specific error code.",
+        "steps": [
+            {
+                "service": "qrcode",
+                "name": "WAS SSL Error (SSLC0008E)",
+                "type": "wasErrorLogger",
+                "id": "SSLC0008E",
+                "options": {
+                    "code": "SSLC0008E",
+                    "repeat": {
+                        "mean": 4000,
+                        "stdev": 500,
+                        "min": 500,
+                        "max": 6000
+                    }
+                }
+            }
+        ]
+    }
+
+  1_cert_warning.json: >
+    {
+        "id": "1_cert_warning",
+        "name": "Image service logs indicate certificate is about to expire.",
+        "description": "The certificate for the image service will expire soon. Unless dealt with the failure will cause lots of problems.",
+        "steps": [
+            {
+                "service": "image",
+                "name": "Log warnings indicate that cert will expire soon.",
+                "type": "setLogger",
+                "options": {
+                    "name": "Log warning of cert to expire.",
+                    "template": "WARNING: service certificate expiration imminent.  Please update certificates.",
+                    "fields": { },
+                    "repeat": {
+                        "mean": 20000,
+                        "stdev": 1000,
+                        "min": 5000,
+                        "max": 30000
+                    }
+                }
+            }
+        ]
+    }
+
+  2_cert_failure.json: >
+    {
+        "id": "2_cert_failure",
+        "name": "Image service cert expires, Author service unable to connect to ratings.",
+        "description": "The ratings service is unaccessible because cert expired.",
+        "steps": [
+            {
+                "service": "author",
+                "name": "Rating endpoint GET /images/:id failing with 500 errors all the time.",
+                "type": "setCallDistributionOverride",
+                "endpoint": "GET /images/:id",
+                "options": [
+                    {
+                        "code": 500,
+                        "weight": 1,
+                        "payload": "CERT_HAS_EXPIRED",
+                        "template": "CERT_HAS_EXPIRED. Reporting: 'notAfter=Nov 8 01:37:01 2021 GMT'. Unable to connect to image service."
+                    }
+                ]
+            },
+            {
+                "service": "author",
+                "type": "latency",
+                "name": "Increase latency in primary GET /image/:id to 0.9 seconds",
+                "endpoint": "GET /images/:id",
+                "value": {
+                    "mean": 900,
+                    "stdev": 200,
+                    "min": 200,
+                    "max": 11000
+                }
+            },
+            {
+                "service": "image",
+                "name": "Increase memory usage",
+                "type": "memory",
+                "value": 8
+            },
+            {
+                "service": "image",
+                "name": "Increase cpu usage",
+                "type": "cpu",
+                "value": 8
+            }
+        ]
+    }
+    
+  

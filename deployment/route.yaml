@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: qotd-usecase
+  namespace: qotd-load
+  labels:
+    app: qotd
+    tier: load
+spec:
+  path: /
+  to:
+    kind: Service
+    name: qotd-usecase
+  port:
+    targetPort: http
